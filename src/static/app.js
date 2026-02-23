@@ -612,10 +612,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const emailButton = activityCard.querySelector(".email-share");
     const copyLinkButton = activityCard.querySelector(".copy-link");
 
-    facebookButton.addEventListener("click", () => shareOnFacebook(name, details));
-    twitterButton.addEventListener("click", () => shareOnTwitter(name, details));
-    emailButton.addEventListener("click", () => shareViaEmail(name, details));
-    copyLinkButton.addEventListener("click", () => copyActivityLink(name, details));
+    if (facebookButton) {
+      facebookButton.addEventListener("click", () => shareOnFacebook(name, details));
+    }
+    if (twitterButton) {
+      twitterButton.addEventListener("click", () => shareOnTwitter(name, details));
+    }
+    if (emailButton) {
+      emailButton.addEventListener("click", () => shareViaEmail(name, details));
+    }
+    if (copyLinkButton) {
+      copyLinkButton.addEventListener("click", () => copyActivityLink(name));
+    }
 
     activitiesList.appendChild(activityCard);
   }
@@ -924,28 +932,39 @@ document.addEventListener("DOMContentLoaded", () => {
     window.location.href = mailtoLink;
   }
 
-  function copyActivityLink(activityName, details) {
+  function copyActivityLink(activityName) {
     const url = getActivityUrl(activityName);
     
-    // Use the Clipboard API to copy the link
-    navigator.clipboard.writeText(url).then(() => {
-      showMessage('Link copied to clipboard!', 'success');
-    }).catch((err) => {
-      // Fallback for older browsers
-      const textArea = document.createElement('textarea');
-      textArea.value = url;
-      textArea.style.position = 'fixed';
-      textArea.style.left = '-999999px';
-      document.body.appendChild(textArea);
-      textArea.select();
-      try {
-        document.execCommand('copy');
+    // Check if Clipboard API is available
+    if (navigator.clipboard && window.isSecureContext) {
+      // Use the modern Clipboard API
+      navigator.clipboard.writeText(url).then(() => {
         showMessage('Link copied to clipboard!', 'success');
-      } catch (err) {
-        showMessage('Failed to copy link. Please try again.', 'error');
-      }
-      document.body.removeChild(textArea);
-    });
+      }).catch((err) => {
+        console.error('Clipboard API failed:', err);
+        fallbackCopyToClipboard(url);
+      });
+    } else {
+      // Fallback for older browsers or non-secure contexts
+      fallbackCopyToClipboard(url);
+    }
+  }
+
+  function fallbackCopyToClipboard(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      showMessage('Link copied to clipboard!', 'success');
+    } catch (err) {
+      console.error('Fallback copy failed:', err);
+      showMessage('Failed to copy link. Please try again.', 'error');
+    }
+    document.body.removeChild(textArea);
   }
 
   // Initialize app
